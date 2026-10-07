@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorte do Lula - Mini Jogo</title>
+    <style>
+        :root {
+            --primary: #d4af37;
+            --secondary: #8b0000;
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a0505, var(--bg));
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: var(--card-bg);
+            border: 3px solid var(--primary);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+
+        .saldo-box {
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+        }
+
+        #saldo {
+            color: #4cd137;
+            font-weight: bold;
+        }
+
+        .slot-machine {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            background: #000;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .slot {
+            width: 70px;
+            height: 90px;
+            background: #fff;
+            color: #000;
+            font-size: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .btn-girar {
+            background: linear-gradient(135deg, var(--primary), #aa820a);
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .btn-girar:hover {
+            transform: scale(1.05);
+            background: linear-gradient(135deg, #ffc738, var(--primary));
+        }
+
+        .btn-girar:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #mensagem {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            min-height: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1> 🥷💰Bet do Lula</h1>
+        <div class="subtitle">Teste sua sorte com o Lula!</div>
+
+        <div class="saldo-box">
+            Saldo: R$ <span id="saldo">100.00</span>
+        </div>
+
+        <div class="slot-machine">
+            <div class="slot" id="slot1">🍒</div>
+            <div class="slot" id="slot2">🍋</div>
+            <div class="slot" id="slot3">🍊</div>
+        </div>
+
+        <button class="btn-girar" id="btnGirar" onclick="jogar()">GIRAR (R$ 0.50)</button>
+        
+        <div id="mensagem"></div>
+    </div>
+ 
+    <script>
+        // Configurações do jogo usando estrutura similar a JSON para os símbolos e pesos/prêmios
+        const configJogo = {
+            custoPorRodada: 0.50,
+            simbolos: [
+                { emoji: '🐯', valor: 0.20 },
+                { emoji: '🎰', valor: 0.75 },
+                { emoji: '🍊', valor: 15 },
+                { emoji: '⭐', valor: 50 },
+                { emoji: '💵', valor: 13 } // O L da sorte!
+            ]
+        };
+
+        let saldo = 100.00;
+
+        function atualizarSaldo() {
+            document.getElementById('saldo').innerText = saldo.toFixed(2);
+        }
+
+        function escolherSimboloAleatorio() {
+            const index = Math.floor(Math.random() * configJogo.simbolos.length);
+            return configJogo.simbolos[index];
+        }
+
+        function jogar() {
+            const btnGirar = document.getElementById('btnGirar');
+            const msgEl = document.getElementById('mensagem');
+
+            if (saldo < configJogo.custoPorRodada) {
+                msgEl.style.color = "#ff4d4d";
+                msgEl.innerText = "Saldo insuficiente! Recarregue a página.";
+                return;
+            }
+
+            // Desconta o valor da aposta
+            saldo -= configJogo.custoPorRodada;
+            atualizarSaldo();
+
+            btnGirar.disabled = true;
+            msgEl.style.color = "#fff";
+            msgEl.innerText = "Girando...";
+
+            // Efeito visual rápido de troca de símbolos antes do resultado
+            let contador = 0;
+            const intervalo = setInterval(() => {
+                document.getElementById('slot1').innerText = escolherSimboloAleatorio().emoji;
+                document.getElementById('slot2').innerText = escolherSimboloAleatorio().emoji;
+                document.getElementById('slot3').innerText = escolherSimboloAleatorio().emoji;
+                contador++;
+
+                if (contador > 10) {
+                    clearInterval(intervalo);
+                    finalizarRodada();
+                }
+            }, 100);
+        }
+
+        function finalizarRodada() {
+            const btnGirar = document.getElementById('btnGirar');
+            const msgEl = document.getElementById('mensagem');
+
+            // Sorteia o resultado final oficial
+            const s1 = escolherSimboloAleatorio();
+            const s2 = escolherSimboloAleatorio();
+            const s3 = escolherSimboloAleatorio();
+            
+            document.getElementById('slot1').innerText = s1.emoji;
+            document.getElementById('slot2').innerText = s2.emoji;
+            document.getElementById('slot3').innerText = s3.emoji;
+
+            // Verifica se ganhou (os 3 símbolos iguais)
+            if (s1.emoji === s2.emoji && s2.emoji === s3.emoji) {
+                const premio = s1.valor;
+                saldo += premio;
+                msgEl.style.color = "#4cd137";
+                msgEl.innerText = `🎉 AEEEEE! Você votou certo e ganhou R$ ${premio.toFixed(2)}!`;
+            } else {
+                msgEl.style.color = "#ff4d4d";
+                msgEl.innerText = "Você foi roubado. Tente de novo!";
+            }
+
+            atualizarSaldo();
+            btnGirar.disabled = false;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Fuga da Prisão</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #111;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+            padding: 20px;
+            background: #222;
+            color: #ffdf00;
+        }
+
+        #painel {
+            padding: 15px;
+            background: #333;
+            font-size: 20px;
+        }
+
+        #jogo {
+            position: relative;
+
+            width: 800px;
+            height: 500px;
+
+            margin: 25px auto;
+
+            background: #555;
+
+            border: 8px solid #777;
+
+            overflow: hidden;
+        }
+
+        /* CHÃO */
+
+        #jogo::before {
+            content: "";
+
+            position: absolute;
+
+            width: 100%;
+            height: 100%;
+
+            background-image:
+                linear-gradient(
+                    90deg,
+                    transparent 95%,
+                    #444 95%
+                ),
+                linear-gradient(
+                    transparent 95%,
+                    #444 95%
+                );
+
+            background-size: 50px 50px;
+
+            opacity: 0.5;
+        }
+
+        /* PERSONAGEM */
+
+        #jogador {
+
+            position: absolute;
+
+            left: 50px;
+            top: 400px;
+
+            width: 55px;
+            height: 60px;
+
+            font-size: 45px;
+
+            z-index: 10;
+
+            user-select: none;
+        }
+
+        /* POLICIAIS */
+
+        .policial {
+
+            position: absolute;
+
+            width: 55px;
+            height: 60px;
+
+            font-size: 40px;
+
+            z-index: 8;
+
+            transition: left 0.15s, top 0.15s;
+
+            user-select: none;
+        }
+
+        /* CHAVES */
+
+        .chave {
+
+            position: absolute;
+
+            font-size: 35px;
+
+            z-index: 5;
+        }
+
+        /* SAÍDA */
+
+        #saida {
+
+            position: absolute;
+
+            right: 20px;
+            top: 20px;
+
+            width: 100px;
+            height: 100px;
+
+            background: green;
+
+            border: 5px solid lime;
+
+            border-radius: 15px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 45px;
+
+            z-index: 5;
+        }
+
+        #saida span {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        #mensagem {
+
+            min-height: 30px;
+
+            margin: 20px;
+
+            font-size: 20px;
+
+            font-weight: bold;
+        }
+
+        button {
+
+            padding: 12px 25px;
+
+            font-size: 18px;
+
+            font-weight: bold;
+
+            background: #ffdf00;
+
+            border: none;
+
+            border-radius: 10px;
+
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #fff000;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <h1>🔐 FUGA DA PRISÃO</h1>
+
+
+    <div id="painel">
+
+        🔑 Chaves:
+        <span id="chaves">0</span>
+
+        &nbsp;&nbsp;&nbsp;
+
+        ❤️ Vidas:
+        <span id="vidas">3</span>
+
+        &nbsp;&nbsp;&nbsp;
+
+        👮 Policiais:
+        <span id="policiais">3</span>
+
+    </div>
+
+
+    <button onclick="iniciarJogo()">
+        ▶️ COMEÇAR JOGO
+    </button>
+
+
+    <div id="jogo">
+
+
+        <!-- PERSONAGEM -->
+
+        <div id="jogador">
+            🧑‍🦲
+        </div>
+
+
+        <!-- POLICIAIS -->
+
+        <div
+            class="policial"
+            id="policial1"
+            style="left: 250px; top: 80px;"
+        >
+            👮
+        </div>
+
+
+        <div
+            class="policial"
+            id="policial2"
+            style="left: 500px; top: 300px;"
+        >
+            👮
+        </div>
+
+
+        <div
+            class="policial"
+            id="policial3"
+            style="left: 650px; top: 150px;"
+        >
+            👮
+        </div>
+
+
+        <!-- CHAVES -->
+
+        <div
+            class="chave"
+            id="chave1"
+            style="left: 200px; top: 350px;"
+        >
+            🔑
+        </div>
+
+
+        <div
+            class="chave"
+            id="chave2"
+            style="left: 600px; top: 350px;"
+        >
+            🔑
+        </div>
+
+
+        <!-- SAÍDA -->
+
+        <div id="saida">
+
+            🚪
+
+            <span>
+                SAÍDA
+            </span>
+
+        </div>
+
+
+    </div>
+
+
+    <div id="mensagem">
+        Clique em COMEÇAR e use as setas!
+    </div>
+
+
+<script>
+
+
+/* ==========================================
+   CONFIGURAÇÕES
+========================================== */
+
+let jogoComecou = false;
+
+let jogadorX = 50;
+let jogadorY = 400;
+
+let chaves = 0;
+
+let vidas = 3;
+
+let velocidadeJogador = 10;
+
+let velocidadePolicial = 2;
+
+
+/* ==========================================
+   ELEMENTOS
+========================================== */
+
+const jogador =
+    document.getElementById("jogador");
+
+const jogo =
+    document.getElementById("jogo");
+
+
+const policiais = [
+
+    {
+        elemento:
+            document.getElementById("policial1"),
+
+        x: 250,
+
+        y: 80
+    },
+
+    {
+        elemento:
+            document.getElementById("policial2"),
+
+        x: 500,
+
+        y: 300
+    },
+
+    {
+        elemento:
+            document.getElementById("policial3"),
+
+        x: 650,
+
+        y: 150
+    }
+
+];
+
+
+/* ==========================================
+   INICIAR
+========================================== */
+
+function iniciarJogo() {
+
+    jogoComecou = true;
+
+    document.getElementById(
+        "mensagem"
+    ).innerText =
+        "🎮 Fuja dos policiais e encontre as duas chaves!";
+
+}
+
+
+/* ==========================================
+   MOVIMENTO DO JOGADOR
+========================================== */
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+
+        if (!jogoComecou) {
+            return;
+        }
+
+
+        let novaX = jogadorX;
+
+        let novaY = jogadorY;
+
+
+        if (event.key === "ArrowUp") {
+
+            novaY -= velocidadeJogador;
+
+        }
+
+
+        if (event.key === "ArrowDown") {
+
+            novaY += velocidadeJogador;
+
+        }
+
+
+        if (event.key === "ArrowLeft") {
+
+            novaX -= velocidadeJogador;
+
+        }
+
+
+        if (event.key === "ArrowRight") {
+
+            novaX += velocidadeJogador;
+
+        }
+
+
+        /* LIMITES */
+
+        novaX =
+            Math.max(
+                0,
+                Math.min(
+                    novaX,
+                    jogo.clientWidth - 55
+                )
+            );
+
+
+        novaY =
+            Math.max(
+                0,
+                Math.min(
+                    novaY,
+                    jogo.clientHeight - 60
+                )
+            );
+
+
+        jogadorX = novaX;
+
+        jogadorY = novaY;
+
+
+        jogador.style.left =
+            jogadorX + "px";
+
+
+        jogador.style.top =
+            jogadorY + "px";
+
+
+        pegarChaves();
+
+        verificarSaida();
+
+
+        event.preventDefault();
+
+    }
+);
+
+
+/* ==========================================
+   POLICIAIS PERSEGUEM O JOGADOR
+========================================== */
+
+function moverPoliciais() {
+
+
+    if (!jogoComecou) {
+        return;
+    }
+
+
+    policiais.forEach(
+        function(policial) {
+
+
+            /* DISTÂNCIA ATÉ O JOGADOR */
+
+            const distanciaX =
+                jogadorX - policial.x;
+
+
+            const distanciaY =
+                jogadorY - policial.y;
+
+
+            const distancia =
+                Math.sqrt(
+                    distanciaX * distanciaX +
+                    distanciaY * distanciaY
+                );
+
+
+            /*
+                Se o jogador estiver perto,
+                o policial começa a perseguir.
+            */
+
+            if (distancia < 300) {
+
+
+                if (distanciaX > 0) {
+
+                    policial.x +=
+                        velocidadePolicial;
+
+                } else {
+
+                    policial.x -=
+                        velocidadePolicial;
+
+                }
+
+
+                if (distanciaY > 0) {
+
+                    policial.y +=
+                        velocidadePolicial;
+
+                } else {
+
+                    policial.y -=
+                        velocidadePolicial;
+
+                }
+
+            }
+
+
+            /*
+                Se estiver longe,
+                o policial continua andando
+                aleatoriamente.
+            */
+
+            else {
+
+
+                const direcao =
+                    Math.random();
+
+
+                if (direcao < 0.25) {
+
+                    policial.x +=
+                        velocidadePolicial;
+
+                }
+
+                else if (direcao < 0.5) {
+
+                    policial.x -=
+                        velocidadePolicial;
+
+                }
+
+                else if (direcao < 0.75) {
+
+                    policial.y +=
+                        velocidadePolicial;
+
+                }
+
+                else {
+
+                    policial.y -=
+                        velocidadePolicial;
+
+                }
+
+            }
+
+
+            /* LIMITES DO MAPA */
+
+            policial.x =
+                Math.max(
+                    0,
+                    Math.min(
+                        policial.x,
+                        jogo.clientWidth - 55
+                    )
+                );
+
+
+            policial.y =
+                Math.max(
+                    0,
+                    Math.min(
+                        policial.y,
+                        jogo.clientHeight - 60
+                    )
+                );
+
+
+            /* ATUALIZAR POLICIAL */
+
+            policial.elemento.style.left =
+                policial.x + "px";
+
+
+            policial.elemento.style.top =
+                policial.y + "px";
+
+
+            verificarColisaoPolicial(
+                policial
+            );
+
+        }
+    );
+
+}
+
+
+/* ==========================================
+   COLISÃO COM POLICIAL
+========================================== */
+
+let invulneravel = false;
+
+
+function verificarColisaoPolicial(
+    policial
+) {
+
+
+    const distanciaX =
+        Math.abs(
+            jogadorX - policial.x
+        );
+
+
+    const distanciaY =
+        Math.abs(
+            jogadorY - policial.y
+        );
+
+
+    if (
+        distanciaX < 45 &&
+        distanciaY < 50 &&
+        !invulneravel
+    ) {
+
+
+        vidas--;
+
+
+        document.getElementById(
+            "vidas"
+        ).innerText =
+            vidas;
+
+
+        invulneravel = true;
+
+
+        /* VOLTAR PARA O COMEÇO */
+
+        jogadorX = 50;
+
+        jogadorY = 400;
+
+
+        jogador.style.left =
+            jogadorX + "px";
+
+
+        jogador.style.top =
+            jogadorY + "px";
+
+
+        document.getElementById(
+            "mensagem"
+        ).innerText =
+            "🚨 Você foi pego por um policial!";
+
+
+        /* 1 segundo de proteção */
+
+        setTimeout(
+            function() {
+
+                invulneravel = false;
+
+            },
+            1000
+        );
+
+
+        if (vidas <= 0) {
+
+            jogoComecou = false;
+
+
+            document.getElementById(
+                "mensagem"
+            ).innerText =
+                "❌ FIM DE JOGO! Clique em COMEÇAR.";
+
+        }
+
+    }
+
+}
+
+
+/* ==========================================
+   PEGAR CHAVES
+========================================== */
+
+function pegarChaves() {
+
+
+    const lista =
+        document.querySelectorAll(".chave");
+
+
+    lista.forEach(
+        function(chave) {
+
+
+            const x =
+                chave.offsetLeft;
+
+
+            const y =
+                chave.offsetTop;
+
+
+            const distanciaX =
+                Math.abs(
+                    jogadorX - x
+                );
+
+
+            const distanciaY =
+                Math.abs(
+                    jogadorY - y
+                );
+
+
+            if (
+                distanciaX < 50 &&
+                distanciaY < 50
+            ) {
+
+
+                chave.remove();
+
+
+                chaves++;
+
+
+                document.getElementById(
+                    "chaves"
+                ).innerText =
+                    chaves;
+
+
+                document.getElementById(
+                    "mensagem"
+                ).innerText =
+                    "🔑 Chave encontrada!";
+
+            }
+
+        }
+    );
+
+}
+
+
+/* ==========================================
+   SAÍDA
+========================================== */
+
+function verificarSaida() {
+
+
+    const distanciaX =
+        Math.abs(
+            jogadorX - 680
+        );
+
+
+    const distanciaY =
+        Math.abs(
+            jogadorY - 20
+        );
+
+
+    if (
+        distanciaX < 100 &&
+        distanciaY < 100
+    ) {
+
+
+        if (chaves >= 2) {
+
+
+            jogoComecou = false;
+
+
+            document.getElementById(
+                "mensagem"
+            ).innerText =
+                "🎉 VOCÊ ESCAPOU DA PRISÃO!";
+
+
+        } else {
+
+
+            document.getElementById(
+                "mensagem"
+            ).innerText =
+                "🔒 Você precisa encontrar as 2 chaves!";
+
+        }
+
+    }
+
+}
+
+
+/* ==========================================
+   LOOP DOS POLICIAIS
+========================================== */
+
+setInterval(
+    moverPoliciais,
+    100
+);
+
+
+</script>
+
+</body>
+
+</html>
